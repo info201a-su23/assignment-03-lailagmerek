@@ -44,7 +44,7 @@ The number of counties in the variable lowest_deaths_in_each_state is greater th
 ## Reflection 5
 What do you think about the number and scale of the inconsistencies in the data? Does the fact that there are inconsistencies mean that people should not use this data? Why or why not? Answer in at least 1-3 sentences
 
-I think the number is not as high as I was expecting. I think that even though there are inconsitiencies, people should still use this data they just need to be cautious and realize that there are some errors/
+I think the number is not as high as I was expecting. I think that even though there are inconsitiencies, people should still use this data they just need to be cautious and realize that there are some errors.
 
 ## Reflection 6
 Why were you interested in this particular question? Were you able to answer your question with code? What did you learn? Answer in at least 1-3 sentences
