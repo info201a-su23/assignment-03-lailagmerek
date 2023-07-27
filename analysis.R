@@ -19,30 +19,43 @@ library(dplyr)
 # 1.b Load the *national level* data from the following URL into a variable
 # called `national`
 # https://github.com/melaniewalsh/Neat-Datasets/raw/main/us-national-covid-2023.csv
-national <- NULL
+national_url <- "https://github.com/melaniewalsh/Neat-Datasets/raw/main/us-national-covid-2023.csv"
+national <- read.csv(national_url)
 
 # 1.c Load the *state level* data from the following URL into a variable called
 # `states`
 # https://github.com/melaniewalsh/Neat-Datasets/raw/main/us-states-covid-2023.csv
-states <- NULL
+states_url <- "https://github.com/melaniewalsh/Neat-Datasets/raw/main/us-states-covid-2023.csv"
+states <- read.csv(states_url)
 
 # 1.d Load the *county level* data from the following URL into a variable called
 # `counties`
 # NOTE: This is a large dataset. It may take 30-60 seconds to load.
 # https://github.com/melaniewalsh/Neat-Datasets/raw/main/us-counties-covid-2023.csv
-counties <- NULL
+counties_url <- "https://github.com/melaniewalsh/Neat-Datasets/raw/main/us-counties-covid-2023.csv"
+counties <- read.csv(counties_url)
 
 # 1.e How many observations (rows) are in each dataset?
 # Create `obs_national`, `obs_states`, `obs_counties`
-obs_national <- NULL
-obs_states <- NULL
-obs_counties <- NULL
+obs_national <- nrow(national)
+obs_states <- nrow(states)
+obs_counties <- nrow(counties)
+
+# Print the results
+obs_national
+obs_states
+obs_counties
 
 # 1.f How many features (columns) are there in each dataset?
 # Create `num_features_national`, `num_features_states`, `num_features_counties`
-num_features_national <- NULL
-num_features_states <- NULL
-num_features_counties <- NULL
+num_features_national <- ncol(national)
+num_features_states <- ncol(states)
+num_features_counties <- ncol(counties)
+
+# Print the results
+num_features_national
+num_features_states
+num_features_counties
 
 
 # 2 Exploratory Analysis ----------------------------------------------------
@@ -58,30 +71,72 @@ num_features_counties <- NULL
 
 # 2.a How many total COVID cases have there been in the U.S. by the most recent
 # date in the dataset? Make sure to pull() this number `total_us_cases`
+total_us_cases <- national %>%
+  filter(date == max(date)) %>%
+  pull(cases)
 
+total_us_cases
 
 # 2.b How many total COVID-related deaths have there been in the U.S. by the
 # most recent date in the dataset? Make sure to pull() this number
 # `total_us_deaths`
+total_us_deaths <- national %>%
+  filter(date == max(date)) %>%
+  pull(deaths)
 
 
 # 2.c Which state has had the highest number of COVID cases? Make sure to pull()
 # this value `state_highest_cases`
+state_highest_cases <- states %>%
+  group_by(state) %>%
+  summarize(total_cases = sum(cases)) %>%
+  arrange(desc(total_cases)) %>%
+  pull(state) %>%
+  first()
 
+state_highest_cases
 
 # 2.d What is the highest number of cases in a state? Make sure to pull() this
 # number `num_highest_state`
+num_highest_state <- states %>%
+  group_by(state) %>%
+  summarize(total_cases = sum(cases)) %>%
+  pull(total_cases) %>%
+  max()
+
+num_highest_state
 
 
 # 2.e Which state has the highest ratio of deaths to cases (deaths/cases), as of
 # the most recent date? Make sure to pull() this value
 # HINT: You may need to create a new column in order to do this:
 # `state_highest_ratio`
+# Reload the `states` dataset
+states_url <- "https://github.com/melaniewalsh/Neat-Datasets/raw/main/us-states-covid-2023.csv"
+states <- read.csv(states_url)
 
+# Find the state with the highest ratio of deaths to cases (deaths/cases)
+state_highest_ratio <- states %>%
+  group_by(state) %>%
+  filter(date == max(date)) %>%
+  mutate(state_highest_ratio = deaths / cases) %>%
+  arrange(desc(state_highest_ratio)) %>%
+  pull(state) %>%
+  first()
+
+state_highest_ratio
 
 # 2.f Which state has had the fewest number of cases as of the most
 # recent date? Make sure to pull() this value `state_lowest_cases`
+state_lowest_cases <- states %>%
+  group_by(state) %>%
+  filter(date == max(date)) %>%
+  summarize(total_cases = sum(cases)) %>%
+  arrange(total_cases) %>%
+  pull(state) %>%
+  first()
 
+state_lowest_cases
 
 # Reflection 2 (answer in the README.md file)
 # Did the number of COVID cases and deaths surprise you? Why or why not? What
@@ -91,21 +146,37 @@ num_features_counties <- NULL
 
 # 2.g What is the highest number of cases that have happened in a single county?
 # Make sure to pull() this NUMBER `num_highest_cases_county`
+num_highest_cases_county <- counties %>%
+  summarize(highest_cases_county = max(cases)) %>%
+  pull(highest_cases_county)
 
+num_highest_cases_county
 
 # 2.h Which county had this highest number of cases? Make sure to pull() this
 # COUNTY `county_highest_cases`
+county_highest_cases <- counties %>%
+  filter(cases == num_highest_cases_county) %>%
+  pull(county)
 
+county_highest_cases
 
 # 2.i Because there are multiple counties with the same name across states, it
 # will be helpful to have a column that stores the county and state together, in
 # this form: "COUNTY, STATE".
 # Therefore, add a new column to your `counties` data frame called `location`
 # that stores the county and state (separated by a comma and space).
+counties <- counties %>%
+  mutate(location = paste(county, state, sep = ", "))
 
 # 2.j What is the name of the location (county, state) with the highest number
 # of deaths? Make sure to pull() this value `location_most_deaths`
+counties$deaths <- as.numeric(counties$deaths)
+# Find the name of the location (county, state) with the highest number of deaths
+location_most_deaths <- counties %>%
+  filter(deaths == max(deaths, na.rm = TRUE)) %>%
+  pull(location)
 
+location_most_deaths
 
 # As you have seen, the three datasets are "cumulative sums" — that is, running
 # totals of the number of cases and deaths. On each day, the cases and deaths
@@ -115,21 +186,62 @@ num_features_counties <- NULL
 # 2.k Add a new column to your `national` data frame called `new_cases` — that
 # is, the number new cases each day.
 # HINT: The dyplr lag() function will be very helpful here.
+# Load the required libraries
+library(dplyr)
 
+# Sort the data frame by date (if it's not already sorted)
+national <- national %>%
+  arrange(date)
+
+# Add the new_cases column
+national <- national %>%
+  mutate(new_cases = cases - lag(cases, default = 0))
 
 # 2.l Similarly, the `deaths` columns is *not* the number of new deaths per day.
 # Add  a new column to the `national` data frame called `new_deaths` that has
 # the number of *new* deaths each day.
 # HINT: The dyplr lag() function will be very helpful here.
+# Load the required libraries
+library(dplyr)
+
+# Assuming you have already loaded and have access to the `national` data frame
+
+# Sort the data frame by date (if it's not already sorted)
+national <- national %>%
+  arrange(date)
+
+# Add the new_deaths column
+national <- national %>%
+  mutate(new_deaths = deaths - lag(deaths, default = 0))
 
 
 # 2.m What was the date when the most new cases in the U.S. occurred? Make sure
 # to pull() this value `date_most_cases`
+date_most_cases <- national %>%
+  filter(new_cases == max(new_cases)) %>%
+  pull(date)
 
+date_most_cases
 
 # 2.n What was the date when the most new deaths in the U.S. occurred? Make sure
 # to pull() this value `date_most_deaths`
+# Load the required libraries
+library(dplyr)
 
+# Assuming you have already loaded and have access to the `national` data frame
+
+# Sort the data frame by date (if it's not already sorted)
+national <- national %>%
+  arrange(date)
+
+# Add the new_deaths column
+national <- national %>%
+  mutate(new_deaths = deaths - lag(deaths, default = 0))
+
+# Find the date when the most new deaths occurred
+date_most_deaths <- national %>%
+  filter(new_deaths == max(new_deaths)) %>%
+  pull(date)
 
 # 2.o How many people died on the date when the most deaths occurred? Make sure
 # to pull() this value `most_deaths`
@@ -139,6 +251,25 @@ num_features_counties <- NULL
 plot(national$new_cases)
 
 plot(national$new_deaths)
+# Load the required libraries
+
+# Sort the data frame by date (if it's not already sorted)
+national <- national %>%
+  arrange(date)
+
+# Add the new_deaths column
+national <- national %>%
+  mutate(new_deaths = deaths - lag(deaths, default = 0))
+
+# Find the most deaths value
+most_deaths <- national %>%
+  filter(new_deaths == max(new_deaths)) %>%
+  pull(deaths)
+# Plotting new_cases
+plot(national$date, national$new_cases, type = "l", xlab = "Date", ylab = "New Cases", main = "New COVID-19 Cases in the U.S.")
+
+# Plotting new_deaths
+plot(national$date, national$new_deaths, type = "l", xlab = "Date", ylab = "New Deaths", main = "New COVID-19 Deaths in the U.S.")
 
 
 # 3. Grouped Analysis --------------------------------------------------------
@@ -148,6 +279,12 @@ plot(national$new_deaths)
 # of cases and corresponding rows (hint: you will need to use a grouping
 # operation and a filter)
 # Save as `highest_cases_in_each_state`
+highest_cases_in_each_state <- counties %>%
+  group_by(state) %>%
+  arrange(date, desc(cases)) %>%
+  slice_head(n = 1) %>%
+  ungroup()
+head(highest_cases_in_each_state)
 
 # Reflection 3 (answer in README.md file)
 # Inspect the `highest_cases_in_each_state` dataframe
@@ -161,6 +298,12 @@ plot(national$new_deaths)
 # deaths and corresponding rows (hint: you will need to use a grouping operation
 # and a filter)
 # Save as `lowest_deaths_in_each_state`
+lowest_deaths_in_each_state <- counties %>%
+  group_by(state) %>%
+  arrange(date, deaths) %>%
+  slice_head(n = 1) %>%
+  ungroup()
+head(lowest_deaths_in_each_state)
 
 # Reflection 4 (answer in README.md file)
 # Why are there so many counties in `lowest_deaths_in_each_state`? That is,
@@ -184,20 +327,27 @@ plot(national$new_deaths)
 # 4.a Create a `total_cases_counties` dataframe that adds up all the COIVD cases
 # for all the counties for every date in the counties dataframe.
 # You should name the columns `date` and `county_total_cases`.
-total_cases_counties <- NULL
+total_cases_counties <- counties %>%
+  group_by(date) %>%
+  summarise(county_total_cases = sum(cases))
+head(total_cases_counties)
 
 # 4.b Join `total_cases_counties` with the `national` dataframe.
 # Save this dataframe as `all_totals`.
-all_totals <- NULL
+all_totals <- left_join(total_cases_counties, national, by = "date")
+head(national_with_total_cases)
 
 # 4.c Filter the all_totals dataframe to find only the rows where the
 # "county_total_cases" column does not match the "cases" column
 # Save as national_county_diff
-national_county_diff <- NULL
+national_county_diff <- all_totals %>%
+  filter(county_total_cases != cases)
+head(national_county_diff)
 
 # 4.d Calculate the number of rows in the national_county_diff dataframe
 # Save as num_national_county_diff
-num_national_county_diff <- NULL
+num_national_county_diff <- nrow(national_county_diff)
+print(num_national_county_diff)
 
 # Reflection 5 (answer in README.md file)
 # What do you think about the number and scale of the inconsistencies in the
@@ -211,11 +361,23 @@ num_national_county_diff <- NULL
 # about this COVID data, and then write code to answer it (at least 2-3 lines)
 
 # QUESTION:  Write your question in English language words here
-#
-#
+#What is the average number of new COVID cases reported per day in the United States during the last 30 days available in the dataset?
 
 #  Write code (at least 2-3 lines) that will answer your question
-my_answer <- NULL
+# Load the lubridate package for date manipulation
+library(lubridate)
+
+# Convert the date column to a proper date format
+national$date <- as.Date(national$date)
+
+# Calculate the average number of new COVID cases per day during the last 30 days
+last_30_days_avg_new_cases <- national %>%
+  filter(date >= max(date) - 29) %>%
+  summarise(avg_new_cases = mean(new_cases, na.rm = TRUE)),
+
+# Save the result in my_answer variable
+my_answer <- last_30_days_avg_new_cases$avg_new_cases
+
 
 # Reflection 6 (answer in README.md file)
 # Why were you interested in this particular question? Were you able to answer
