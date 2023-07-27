@@ -10,6 +10,10 @@
 # NOTE: You will often be asked to pull() specific values from your analysis.
 
 # 1.a Load the tidyverse package and the dplyr package
+install.packages("tidyverse")
+install.packages("dplyr")
+library(tidyverse)
+library(dplyr)
 
 
 # 1.b Load the *national level* data from the following URL into a variable
